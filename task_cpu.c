@@ -1,4 +1,3 @@
-//Mariam chstuges hl@ chem verjacrel :)
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
