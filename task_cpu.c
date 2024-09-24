@@ -79,14 +79,6 @@ void EXIT() {
     }
 }
 
-void DISC(int n) {
-    IP -= n;
-    if (IP < 0) {
-        IP = 0;
-    }
-    printf("Discarded last %d instructions. Instruction Pointer is now %d.\n", n, IP);
-}
-
 void LAYO() {
    printf("Registers: \n");
     for (int i = 0; i < REGISTER_COUNT; i++) {
