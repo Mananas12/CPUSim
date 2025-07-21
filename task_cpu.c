@@ -9,56 +9,57 @@
 #define INSTRUCTION_SIZE 20 // number of instructions
 #define HISTORY_SIZE 20 // number of history
 
-FILE * history_file; // location of history file
 
-struct CPU_INFO{ // CPU information
+struct CPU_INFO{ 
     int registers[REGISTER_COUNT];
     int memory[MEMORY_SIZE];
     int WSR;
     int IP;
 }typedef CPU_INFO;
 
+FILE * history_file; // location of history file
 CPU_INFO CPU;
 
-void add_history(){ // add CPU information
+void add_history(){ 
     fwrite(&CPU, 1, sizeof(CPU_INFO), history_file);
+    fflush(history_file);
 }
 
-void ADD(int dest, int src1, int src2) { // addition point
+void ADD(int dest, int src1, int src2) {
     CPU.registers[dest] = CPU.registers[src1] + CPU.registers[src2];
     CPU.IP++;
     add_history();
 }
-void ADD_VAL(int dest, int src1, int value) { // addition point with value
+void ADD_VAL(int dest, int src1, int value) {
     CPU.registers[dest] = CPU.registers[src1] + value;
     CPU.IP++;
     add_history();
 }
 
-void SUB(int dest, int src1, int src2) { // subtraction point
+void SUB(int dest, int src1, int src2) { 
     CPU.registers[dest] = CPU.registers[src1] - CPU.registers[src2];
     CPU.IP++;
     add_history();
 }
-void SUB_VAL(int dest, int src1, int value) { // subtraction point with value
+void SUB_VAL(int dest, int src1, int value) {
     CPU.registers[dest] = CPU.registers[src1] - value;
     CPU.IP++;
     add_history();
 }
 
-void MOV(int dest, int src1) { // move point
+void MOV(int dest, int src1) {
     printf("MOV");
     CPU.registers[dest] = CPU.registers[src1];
     CPU.IP++;
     add_history();
 }
-void MOV_VAL(int dest, int value) { // move with value
+void MOV_VAL(int dest, int value) {
     CPU.registers[dest] = value;
     CPU.IP++;
     add_history();
 }
 
-void LOAD(int dest, int address) { // load point
+void LOAD(int dest, int address) {
     if (address < 0 || address >= MEMORY_SIZE) {
         printf("Error: Memory address %d out of bounds.\n", address);
         return;
@@ -68,65 +69,63 @@ void LOAD(int dest, int address) { // load point
     printf("Loaded value %d from Memory[%d] into R%d.\n",CPU.memory[address], address, dest);
 }
 
-void STORE(int src, int address) { // store point
+void STORE(int src, int address) {
      if (address < 0 || address >= MEMORY_SIZE) {
         printf("Error: Memory address %d out of bounds.\n", address);
         return;
     }
     CPU.memory[address] = CPU.registers[src];
     CPU.IP++;
+    add_history();
     printf("Store value %d from R%d into Memory address %d.\n", CPU.memory[address], src, address);
 }
 
-void START() { // start point
-
+void START() {
     CPU.WSR = 1;
-    memset(CPU.memory, 0, sizeof(CPU.memory));
     CPU.IP = 0;
-    printf("CPU initialized and memory reset after start.\n");
+    memset(CPU.registers, 0, sizeof(CPU.registers));
+    memset(CPU.memory, 0, sizeof(CPU.memory));
+    printf("CPU started and memory cleared.\n");
+    add_history();
 }
 
-void EXIT() { // exit point
-    if (CPU.WSR == 1) {
-        CPU.WSR = 0;
-        memset(CPU.registers, 0, sizeof(CPU.registers));
-        memset(CPU.memory, 0, sizeof(CPU.memory));
-        printf("CPU initialized and memory reset after exit.\n");
-    } else {
-        printf("Terminate process.\n");
-        exit(0);
-    }
+void EXIT() { 
+    fclose(history_file);
+    printf("Exiting CPU Simulator.\n");
+    exit(0);
 }
 
-void DISC(int num) { // previous instruction point
-    if(num  < CPU.IP){
-        printf("num < IP\n");
+void DISC(int steps) {
+    if(steps > CPU.IP){
+        printf("Cannot rollback %d steps, IP = %d.\n", steps, CPU.IP);
         return;
     }
-    fseek(history_file, SEEK_SET,(CPU.IP - num - 1) * sizeof(CPU));
+    fseek(history_file, SEEK_SET,(CPU.IP - steps - 1) * sizeof(CPU));
     fread(&CPU, 1, sizeof(CPU_INFO), history_file);
+    CPU.IP -= steps;
     ftruncate(fileno(history_file), sizeof(CPU_INFO) * CPU.IP);
+    printf("Rolled back %d steps.\n", steps);
 }
 
-void LAYO() { // display point
-   printf("Registers: \n");
+void LAYO() { 
+   printf("\nRegisters: \n");
     for (int i = 0; i < REGISTER_COUNT; i++) {
         printf("R%d: %d ", i, CPU.registers[i]);
     }
     
-    printf("\n");
+    printf("\nInstruction Pointer: %d\n", CPU.IP);
     printf("Working Status Register: %d\n", CPU.WSR);
-
-    printf("Memory: \n");
+    printf("\nMemory (non-zero values):\n");
+    
     for (int i = 0; i < MEMORY_SIZE; i++) {
         if (CPU.memory[i] != 0) {
-            printf("Size: %d, Memory[%d]: %d ", MEMORY_SIZE, i, CPU.memory[i]);
+            printf("Memory[%d]: %d ", i, CPU.memory[i]);
         }
     }
-    printf("\nInstruction Pointer: %d\n", CPU.IP);
+    printf("\n");
 }
 
-void execute(char *instruction) { // execute instruction
+void execute(char *instruction) {
     char operation[10];
     int dest, src, src1, src2, address, value, n;
     
@@ -188,7 +187,6 @@ void execute(char *instruction) { // execute instruction
 
 int main() {
     char instruction[50];
-
     printf("Simple CPU Simulator\n");
     printf("Enter assembly instructions:\n");
     history_file =  fopen("history.txt", "w+");
@@ -197,13 +195,11 @@ int main() {
         perror("Open failed: \n");
         exit(EXIT_FAILURE);
     }
-
     while (1) {
         printf("> ");
         fgets(instruction, sizeof(instruction), stdin);
         instruction[strcspn(instruction, "\n")] = 0;
         execute(instruction);
     }
-
     return 0;
 }
