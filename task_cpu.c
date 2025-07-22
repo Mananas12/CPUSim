@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #define MEMORY_SIZE 256 
 #define REGISTER_COUNT 8 
@@ -130,11 +131,10 @@ void to_upper(char *str) {
 }
 
 void execute(char *instruction) {
-    char operation[10];
     int dest, src, src1, src2, address, value, n;
-    char instuction_copy[50];
-    strcpy(insrtuction_copy, instruction);
-
+    char instruction_copy[50];
+    strncpy(instruction_copy, instruction, sizeof(instruction_copy));
+    instruction_copy[sizeof(instruction_copy) - 1] = '\0';
     to_upper(instruction_copy);
     
     if (sscanf(instruction_copy, "ADD R%d, R%d, R%d", &dest, &src1, &src2) == 3) {
