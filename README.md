@@ -1,4 +1,4 @@
-CPU_Simulator is a simple CPU simulator written in C that emulates basic CPU behavior with virtual registers, memory, and instruction execution. It supports a set of custom assembly-like commands and maintains execution history for rollback functionality.
+CPUSim is a simple CPU simulator written in C that emulates basic CPU behavior with virtual registers, memory, and instruction execution. It supports a set of custom assembly-like commands and maintains execution history for rollback functionality.
 
 Features
 
